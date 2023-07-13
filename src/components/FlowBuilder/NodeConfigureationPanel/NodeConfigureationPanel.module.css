@@ -1,0 +1,10 @@
+.Container {
+    border: 1px solid #eee;
+    font-size: 12px;
+    background: #fcfcfc;
+    width: 400px;
+}
+
+.Wrapper {
+    padding: 15px 10px;
+}

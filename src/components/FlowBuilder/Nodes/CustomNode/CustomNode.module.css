@@ -1,0 +1,8 @@
+.Container {
+    border-radius: 3px;
+}
+
+.Wrapper {
+    padding: 5px;
+    pointer-events: all;
+}

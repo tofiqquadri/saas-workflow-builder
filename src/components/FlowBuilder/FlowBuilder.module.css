@@ -1,0 +1,19 @@
+.FlowBuilderContainer {
+    flex-direction: column;
+    display: flex;
+    flex-grow: 1;
+    height: 100%;
+    width: 100%;
+}
+
+.FlowBuilderContainer .FlowBuilderWrapper {
+    flex-grow: 1;
+    /* height: 100%; */
+    width: 100%;
+}
+
+@media screen and (min-width: 768px) {
+    .FlowBuilderContainer {
+        flex-direction: row;
+    }
+}
