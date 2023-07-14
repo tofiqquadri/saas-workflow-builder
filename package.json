@@ -9,10 +9,16 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.8.0-beta.7",
+    "@apollo/experimental-nextjs-app-support": "^0.0.0-commit-473354a",
+    "@apollo/server": "^4.7.5",
+    "@as-integrations/next": "^2.0.1",
     "@mdi/js": "^7.2.96",
     "@mdi/react": "^1.6.1",
     "autoprefixer": "10.4.14",
+    "graphql": "^16.7.1",
     "lodash": "^4.17.21",
+    "mongoose": "^7.3.4",
     "next": "13.4.9",
     "postcss": "8.4.25",
     "react": "18.2.0",
@@ -22,5 +28,8 @@
     "tailwindcss": "3.3.2",
     "uuid4": "^2.0.3",
     "validator": "^13.9.0"
+  },
+  "devDependencies": {
+    "encoding": "^0.1.13"
   }
 }

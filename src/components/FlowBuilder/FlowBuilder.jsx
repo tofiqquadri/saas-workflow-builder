@@ -207,6 +207,7 @@ const FlowBuilder = () => {
                         onDragOver={onDragOver}
                         connectionLineType={'step'}
                         connectionLineStyle={connectionLineStyle}
+                        snapToGrid={true}
                         fitView
                         elementsSelectable>
                         <Controls />
