@@ -2,6 +2,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import ReactFlow from 'reactflow';
 import 'reactflow/dist/style.css';
+import toast from 'react-hot-toast';
 import { addEdge } from 'reactflow';
 import { Controls } from 'reactflow';
 import { Background } from 'reactflow';
@@ -60,7 +61,7 @@ const FlowBuilder = () => {
                     return node;
                 }
 
-                console.log('Edit', node);
+                toast.success('Success updating node data');
                 return {
                     ...node,
                     data: {

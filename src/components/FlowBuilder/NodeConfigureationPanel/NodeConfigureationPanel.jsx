@@ -99,7 +99,8 @@ function NodeConfigureationPanel({ node, onClose }) {
 
         updatedFormConfig = {
             ...updatedFormConfig,
-            isValid: isFormValid
+            isValid: isFormValid,
+            touched: true
         };
 
         setFormConfig(updatedFormConfig);
@@ -114,10 +115,7 @@ function NodeConfigureationPanel({ node, onClose }) {
             {formGenerator(formConfig, formConfig.data, inputChangedHandler)}
 
             <div className="flex justify-end mt-4">
-                <button className="px-4 py-2 bg-transparent hover:bg-blue-500 text-blue-700 font-semibold hover:text-white border border-blue-500 hover:border-transparent rounded-none mr-2">
-                    Cancel
-                </button>
-                {formConfig?.isValid && (
+                {formConfig?.isValid && formConfig?.touched && (
                     <button
                         onClick={onSubmitNodeData}
                         className={`px-4 py-2 font-semibold text-sm bg-sky-500 text-white rounded-none shadow-sm hover:bg-sky-300`}>

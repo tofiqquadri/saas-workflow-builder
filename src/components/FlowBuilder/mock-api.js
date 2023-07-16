@@ -125,6 +125,36 @@ export const NODE_SCHEMA_LIST = [
         label: 'Redirect User',
         icon: 'navigationVarient',
         hasSource: true,
-        hasTarget: false
+        hasTarget: false,
+        config: {
+            form: {
+                isValid: false,
+                controls: [
+                    {
+                        key: 'url',
+                        elementType: 'input',
+                        displayLabel: 'Redirect URL',
+                        elementConfig: {
+                            type: 'text',
+                            placeholder: 'Redirect URL'
+                        },
+                        valid: false,
+                        validation: {
+                            required: true,
+                            minLength: 6,
+                            maxLength: 100,
+                            isURL: true
+                        },
+                        touched: false,
+                        canUpdate: true,
+                        errors: [],
+                        show: true
+                    }
+                ],
+                data: {
+                    url: ''
+                }
+            }
+        }
     }
 ];
