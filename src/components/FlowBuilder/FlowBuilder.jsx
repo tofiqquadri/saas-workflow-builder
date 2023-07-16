@@ -1,49 +1,26 @@
 'use client';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import ReactFlow, {
-    ReactFlowProvider,
-    MarkerType,
-    Background,
-    addEdge,
-    useNodesState,
-    useEdgesState,
-    Controls
-} from 'reactflow';
+import ReactFlow from 'reactflow';
 import 'reactflow/dist/style.css';
+import { addEdge } from 'reactflow';
+import { Controls } from 'reactflow';
+import { Background } from 'reactflow';
 import Sidebar from './SideBar/SideBar';
-import NodeConfigureationPanel from './NodeConfigureationPanel/NodeConfigureationPanel';
-import CustomNode from './Nodes/CustomNode/CustomNode';
-import uuid4 from 'uuid4';
-import _ from 'lodash';
-import { NODE_SCHEMA_LIST } from './mock-api';
+import { useNodesState } from 'reactflow';
+import { useEdgesState } from 'reactflow';
+import { getId } from './FlowBuilderConfig';
+import { ReactFlowProvider } from 'reactflow';
 import styles from './FlowBuilder.module.css';
+import { NODE_TYPES } from './FlowBuilderConfig';
+import { UPDATE_WORKFLOW } from '@/db/mutations';
+import { GET_NODES, GET_WORKFLOW } from '@/db/queries';
+import { DEFAULT_EDGE_CONFIG } from './FlowBuilderConfig';
+import { connectionLineStyle } from './FlowBuilderConfig';
+import DataLoader from '../UI/Loader/DataLoader/DataLoader';
+import { useLazyQuery, useMutation, useQuery } from '@apollo/client';
+import NodeConfigureationPanel from './NodeConfigureationPanel/NodeConfigureationPanel';
 
-const UI_NODES = _.cloneDeep(NODE_SCHEMA_LIST);
-
-const initialNodes = [
-    // {
-    //     id: '1',
-    //     type: 'input',
-    //     data: { label: 'input node' },
-    //     position: { x: 250, y: 5 }
-    // }
-];
-
-const DEFAULT_EDGE_CONFIG = {
-    markerEnd: {
-        type: MarkerType.ArrowClosed,
-        width: 20,
-        height: 20,
-        color: '#FF0072'
-    },
-    type: 'step'
-};
-const NODE_TYPES = {
-    customNode: CustomNode
-};
-const connectionLineStyle = { stroke: '#3C639B' };
-
-const getId = () => `dndnode_${uuid4()}`;
+const initialNodes = [];
 
 const FlowBuilder = () => {
     const reactFlowWrapper = useRef(null);
@@ -51,6 +28,30 @@ const FlowBuilder = () => {
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
     const [selectedNode, setSelectedNode] = useState(null);
+    const [sidebarUINodes, setSidebarUINodes] = useState([]);
+    const [
+        updateWorkflow,
+        {
+            loading: loadingUpdateWorkflow,
+            error: errorUpdateWorkflow,
+            data: dataUpdateWorkflow
+        }
+    ] = useMutation(UPDATE_WORKFLOW);
+
+    const [
+        getWorkflow,
+        {
+            loading: loadingGetWorkflow,
+            error: errorGetWorkflow,
+            data: dataGetWorkflow
+        }
+    ] = useLazyQuery(GET_WORKFLOW);
+
+    const {
+        data: dataNodes,
+        loading: loadingNodes,
+        error: errorNodes
+    } = useQuery(GET_NODES);
 
     const onUpdateNodeDataHandler = (formData, nodeId) => {
         setNodes((nds) =>
@@ -85,6 +86,34 @@ const FlowBuilder = () => {
             setSelectedNode(currentSelectedNode);
         }
     }, [nodes]);
+
+    useEffect(() => {
+        const { getWorkflow } = dataGetWorkflow || { getWorkflow: null };
+        if (getWorkflow) {
+            const { nodes, edges } = getWorkflow;
+
+            const nodesJSON = nodes ? JSON.parse(nodes) : [];
+            const edgesJSON = edges ? JSON.parse(edges) : [];
+
+            reInitializeNodes(nodesJSON);
+            setNodes(nodesJSON);
+            setEdges(edgesJSON);
+        }
+    }, [dataGetWorkflow]);
+
+    useEffect(() => {
+        const { getNodes } = dataNodes || { getNodes: null };
+
+        if (getNodes) {
+            let newSidebarUINodes = getNodes.map((node) => {
+                return {
+                    ...node,
+                    config: JSON.parse(node.config)
+                };
+            });
+            setSidebarUINodes(newSidebarUINodes);
+        }
+    }, [dataNodes]);
 
     const onConnect = useCallback(
         (params) =>
@@ -148,7 +177,6 @@ const FlowBuilder = () => {
 
     const onNodeClick = (event) => {
         const { id } = event?.target?.dataset;
-        // console.log(id, event);
         if (id) {
             const selectedNode = nodes.find((node) => node.id === id);
             setSelectedNode(selectedNode);
@@ -160,21 +188,21 @@ const FlowBuilder = () => {
     };
 
     const onSaveWorkFlowHandler = () => {
-        let formattedData = { nodes: nodes, edges: edges };
+        let nodesString = nodes ? JSON.stringify(nodes) : null;
+        let edgesString = edges ? JSON.stringify(edges) : null;
 
-        console.log(formattedData);
-        console.log(JSON.stringify(formattedData));
-        localStorage.setItem('workflow', JSON.stringify(formattedData));
+        updateWorkflow({
+            variables: {
+                updateWorkflowId: '64b13a15b70c350faf7f7a79',
+                input: { nodes: nodesString, edges: edgesString }
+            }
+        });
     };
 
     const onLoadWorkFlowFromDBHandler = () => {
-        const workflow = localStorage.getItem('workflow');
-        if (workflow) {
-            const { nodes, edges } = JSON.parse(workflow);
-            reInitializeNodes(nodes);
-            setNodes(nodes);
-            setEdges(edges);
-        }
+        getWorkflow({
+            variables: { getWorkflowId: '64b13a15b70c350faf7f7a79' }
+        });
     };
 
     const reInitializeNodes = (nodes) => {
@@ -183,17 +211,37 @@ const FlowBuilder = () => {
         }
     };
 
+    const containerNotificationsUI = (
+        <>
+            {loadingGetWorkflow && (
+                <LoaderUI message={'Downloading workflow...'} />
+            )}
+            {errorGetWorkflow && (
+                <span className="text-red-500">Error downloading workflow</span>
+            )}
+            {loadingUpdateWorkflow && (
+                <LoaderUI message={'Uploading workflow...'} />
+            )}
+            {errorUpdateWorkflow && (
+                <span className="text-red-500">Error uploading workflow</span>
+            )}
+        </>
+    );
+
     return (
         <div className={styles.FlowBuilderContainer}>
             <ReactFlowProvider>
                 <Sidebar
-                    nodeTypes={UI_NODES}
+                    loading={loadingNodes}
+                    error={errorNodes}
+                    nodeTypes={sidebarUINodes}
                     onExport={onSaveWorkFlowHandler}
                     onLoad={onLoadWorkFlowFromDBHandler}
                 />
                 <div
                     className={styles.FlowBuilderWrapper}
                     ref={reactFlowWrapper}>
+                    {containerNotificationsUI}
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -207,7 +255,6 @@ const FlowBuilder = () => {
                         onDragOver={onDragOver}
                         connectionLineType={'step'}
                         connectionLineStyle={connectionLineStyle}
-                        snapToGrid={true}
                         fitView
                         elementsSelectable>
                         <Controls />
@@ -222,5 +269,12 @@ const FlowBuilder = () => {
         </div>
     );
 };
+
+const LoaderUI = ({ message }) => (
+    <div className="flex flex-col justify-center items-center w-full">
+        <DataLoader />
+        <span className="text-purple-900">{message}</span>
+    </div>
+);
 
 export default FlowBuilder;

@@ -106,7 +106,6 @@ function NodeConfigureationPanel({ node, onClose }) {
     };
 
     const onSubmitNodeData = () => {
-        console.log(data);
         data.onUpdateNodeData(formConfig.data, node.id);
     };
 

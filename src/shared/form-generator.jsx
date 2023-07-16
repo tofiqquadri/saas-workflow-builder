@@ -1,6 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React from 'react';
-// import { Col, FormGroup, Input, Label } from 'reactstrap';
 import Select from 'react-select';
 import FormControlError from '@/components/UI/FormControlError/FormControlError';
 
