@@ -9,6 +9,8 @@ import { Background } from 'reactflow';
 import Sidebar from './SideBar/SideBar';
 import { useNodesState } from 'reactflow';
 import { useEdgesState } from 'reactflow';
+import { getConnectedEdges } from 'reactflow';
+import { getOutgoers } from 'reactflow';
 import { getId } from './FlowBuilderConfig';
 import { ReactFlowProvider } from 'reactflow';
 import styles from './FlowBuilder.module.css';
@@ -30,6 +32,12 @@ const FlowBuilder = () => {
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
     const [selectedNode, setSelectedNode] = useState(null);
     const [sidebarUINodes, setSidebarUINodes] = useState([]);
+    const [hidden, setHidden] = useState(true);
+
+    let outgoers = [];
+    let connectedEdges = [];
+    let stack = [];
+
     const [
         updateWorkflow,
         {
@@ -176,12 +184,66 @@ const FlowBuilder = () => {
         [reactFlowInstance]
     );
 
+    const hide = (hidden, childEdgeID, childNodeID) => (nodeOrEdge) => {
+        if (
+            childEdgeID.includes(nodeOrEdge.id) ||
+            childNodeID.includes(nodeOrEdge.id)
+        )
+            nodeOrEdge.hidden = hidden;
+        return nodeOrEdge;
+    };
+
+    const checkTarget = (edge, id) => {
+        let edges = edge.filter((ed) => {
+            return ed.target !== id;
+        });
+        return edges;
+    };
+
     const onNodeClick = (event) => {
         const { id } = event?.target?.dataset;
+        let node = nodes.find((node) => node.id === id);
+
         if (id) {
             const selectedNode = nodes.find((node) => node.id === id);
             setSelectedNode(selectedNode);
+        } else {
+            return;
         }
+
+        if (!node || !node.id) {
+            return;
+        }
+
+        // Expand and Collapse Nodes
+        let currentNodeID = node.id;
+        stack.push(node);
+        while (stack.length > 0) {
+            let lastNOde = stack.pop();
+            let childnode = getOutgoers(lastNOde, nodes, edges);
+            let childedge = checkTarget(
+                getConnectedEdges([lastNOde], edges),
+                currentNodeID
+            );
+            childnode.map((goer, key) => {
+                stack.push(goer);
+                outgoers.push(goer);
+            });
+            childedge.map((edge, key) => {
+                connectedEdges.push(edge);
+            });
+        }
+
+        let childNodeID = outgoers.map((node) => {
+            return node.id;
+        });
+        let childEdgeID = connectedEdges.map((edge) => {
+            return edge.id;
+        });
+
+        setNodes((nodes) => nodes.map(hide(hidden, childEdgeID, childNodeID)));
+        setEdges((edges) => edges.map(hide(hidden, childEdgeID, childNodeID)));
+        setHidden(!hidden);
     };
 
     const onCloseNodeConfigureationPanelHandler = () => {
